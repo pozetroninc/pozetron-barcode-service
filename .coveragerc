@@ -1,0 +1,4 @@
+[run]
+omit =
+    pozetron_barcode/settings/*
+    pozetron_barcode/run_bjoern.py
