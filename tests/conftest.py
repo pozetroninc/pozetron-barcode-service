@@ -13,6 +13,13 @@ class CustomTestClient(TestClient):
 
     def simulate_post_png(self, *args, **kw):
         self._add_file_wrapper(kw)
+        # If Content-Type is not specified explicitly, set application/x-www-form-urlencoded
+        try:
+            headers = kw['headers']
+        except KeyError:
+            headers = kw['headers'] = {}
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/x-www-form-urlencoded'
         return super().simulate_post(*args, **kw)
 
     def _add_file_wrapper(self, kw):

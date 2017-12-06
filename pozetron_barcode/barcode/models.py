@@ -9,6 +9,8 @@ class BarcodeResource:
 
     @staticmethod
     def on_post(req, resp):
+        if not req.content_type or req.content_type.split(';')[0] != 'application/x-www-form-urlencoded':
+            raise falcon.HTTPUnsupportedMediaType(description='Use application/x-www-form-urlencoded')
         # Get data (bytes) from request
         try:
             if len(req.params) != 1:

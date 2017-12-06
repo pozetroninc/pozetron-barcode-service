@@ -20,6 +20,17 @@ def test_get_barcode(client):
     assert response.content == b''
 
 
+def test_post_barcode_invalid(client):
+    response = client.simulate_post_png('/',
+                                        body='{"text":"abracadabra"}',
+                                        headers={'Content-Type': 'application/json'})
+    assert response.status_code == 415
+    assert response.json == {
+        'title': 'Unsupported media type',
+        'description': 'Use application/x-www-form-urlencoded'
+    }
+
+
 def test_post_barcode(client, abracadabra_png):
     # No params
     response = client.simulate_post_png('/')
