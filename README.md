@@ -8,11 +8,10 @@ Start Docker
 
     docker-compose up
 
-Get QR code via browser:
+Get QR code using [HTTPie](https://httpie.org/):
 
-- http://localhost:9001?text=some-text
-
-- http://localhost:9001?base64=c29tZS10ZXh0
+    http -v --form POST http://localhost:9001 text=abracadabra --download -o qrcode.png
+    http -v --form POST http://localhost:9001 base64=YWJyYWNhZGFicmE= --download -o qrcode.png
 
 ## Testing
 

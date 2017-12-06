@@ -8,7 +8,7 @@ import pyqrcode as qrcode
 class BarcodeResource:
 
     @staticmethod
-    def on_get(req, resp):
+    def on_post(req, resp):
         # Get data (bytes) from request
         try:
             if len(req.params) != 1:

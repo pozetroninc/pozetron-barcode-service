@@ -11,6 +11,10 @@ class CustomTestClient(TestClient):
         self._add_file_wrapper(kw)
         return super().simulate_get(*args, **kw)
 
+    def simulate_post_png(self, *args, **kw):
+        self._add_file_wrapper(kw)
+        return super().simulate_post(*args, **kw)
+
     def _add_file_wrapper(self, kw):
         # Tests are a bit different from real WSGI server: they don't have env['wsgi.file_wrapper'].
         # We add it here, but Falcon app removes it from request
