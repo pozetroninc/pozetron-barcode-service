@@ -6,6 +6,8 @@ App runner
 from __future__ import absolute_import
 # Third-party imports
 import falcon
+from falcon_cors import CORS
+
 
 # Local imports
 try:
@@ -16,13 +18,16 @@ except ImportError:
     from pozetron_barcode.healthcheck.healthz import HealthCheck
 
 
+cors = CORS(allow_origins_regex='http://localhost:')
+
+
 # Create resources
 barcode = BarcodeResource()
 health_check = HealthCheck()
 
 
 # Create falcon app
-app = falcon.API()
+app = falcon.API(middleware=[cors.middleware])
 app.req_options.auto_parse_form_urlencoded = True
 app.add_route('/healthz/', health_check)
 app.add_route('/', barcode)
