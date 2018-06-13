@@ -1,8 +1,11 @@
 from base64 import b64decode
+from datetime import datetime, timezone
 from io import BytesIO
 
+import dateutil.parser
 import falcon
 import pyqrcode as qrcode
+import requests
 
 
 class BarcodeResource:
@@ -13,8 +16,6 @@ class BarcodeResource:
             raise falcon.HTTPUnsupportedMediaType(description='Use application/x-www-form-urlencoded')
         # Get data (bytes) from request
         try:
-            if len(req.params) != 1:
-                raise KeyError
             if 'base64' in req.params:
                 try:
                     data = b64decode(req.params['base64'])
@@ -26,6 +27,28 @@ class BarcodeResource:
                 raise KeyError
         except KeyError:
             raise falcon.HTTPBadRequest(description='Invalid parameters. Required: "text" or "base64"')
+        
+        # Verify recaptcha
+        if 'recaptcha' in req.params:
+            r = requests.post('https://www.google.com/recaptcha/api/siteverify', data = {
+                'secret':'6Lfw2F4UAAAAAN79AC2lM7Ct7686UjtwKf84DLtW',
+                'response': req.params['recaptcha']
+            })
+            try:
+                result = r.json()
+            except ValueError:
+                raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
+            if not result.get('success'):
+                raise falcon.HTTPBadRequest(description='Invalid recaptcha')
+            if result.get('hostname') not in ['qrbarco.de', 'www.qrbarco.de', 'localhost']:
+                raise falcon.HTTPBadRequest(description='Invalid recaptcha')
+            challenge_time = dateutil.parser.parse(result.get('challenge_ts'))
+            now = datetime.now(timezone.utc)
+            if (now - challenge_time).total_seconds() > 60:
+                raise falcon.HTTPBadRequest(description='Recaptcha token expired')
+        else:
+            raise falcon.HTTPBadRequest(description='Recaptcha token required')
+        
         return BarcodeResource._generate_barcode(req, resp, data)
 
     @staticmethod
