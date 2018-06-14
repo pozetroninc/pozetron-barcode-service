@@ -1,6 +1,7 @@
 from base64 import b64decode
 from datetime import datetime, timezone
 from io import BytesIO
+import logging
 
 import backoff
 import dateutil.parser
@@ -13,7 +14,8 @@ from pozetron_barcode.settings import (
     RECAPTCHA_SECRET,
     RECAPTCHA_ALLOWED_HOSTNAMES,
     RECAPTCHA_EXPIRES_IN,
-    RECAPTCHA_MAX_RETRY_TIME
+    RECAPTCHA_MAX_RETRY_TIME,
+    RECAPTCHA_SHOULD_LOG_RETRIES
 )
 
 class RecaptchaRequiredException(Exception):
@@ -37,6 +39,10 @@ def recaptcha_backoff_handler(details):
 
 class BarcodeResource:
 
+    def __init__(self):
+        if RECAPTCHA_SHOULD_LOG_RETRIES:
+            logging.getLogger('backoff').addHandler(logging.StreamHandler())
+    
     @staticmethod
     @backoff.on_exception(
         backoff.expo,
@@ -53,8 +59,8 @@ class BarcodeResource:
             BarcodeResource._verify_recaptcha(req, resp)
         except RecaptchaRequiredException:
             raise falcon.HTTPBadRequest(description='reCAPTCHA token required')
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-            raise RecaptchaRequestException()
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            raise RecaptchaRequestException(e.args[0])
         except RecaptchaJSONException:
             raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
         except RecaptchaVerificationException:
