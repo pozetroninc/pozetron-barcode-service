@@ -18,6 +18,7 @@ SOME_UNVALID_HOSTNAME = 'www.unval.id'
 SOME_VALID_RECAPTCHA_TOKEN = 'validtoken'
 SOME_UNVALID_RECAPTCHA_TOKEN = 'unvalidtoken'
 SOME_EXPIRED_RECAPTCHA_TOKEN = 'expiredtoken'
+SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN = 'unvalidhostnametoken'
 
 # Example recaptcha verification responses
 SUCCESSFUL_RECAPTCHA_RESPONSE = {
@@ -36,27 +37,39 @@ EXPIRED_RECAPTCHA_RESPONSE = {
     'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=RECAPTCHA_EXPIRES_IN+10)).isoformat()
 }
 
+UNVALID_HOSTNAME_RECAPTCHA_RESPONSE = {
+    'success': True,
+    'hostname': SOME_UNVALID_HOSTNAME,
+    'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=RECAPTCHA_EXPIRES_IN+10)).isoformat()
+}
+
 
 def mocked_requests_post(*args, **kwargs):
     '''Mock for requests.post'''
 
+    url = args[0]
+    data = kwargs['data']
+    
     class MockResponse:
         def __init__(self, json_data, status_code):
             self.json_data = json_data
             self.status_code = status_code
 
         def json(self):
-            if args[0] == SOME_UNVALID_JSON_RECAPTCHA_API_URL:
-                raise ValueError
+            if url == SOME_UNVALID_JSON_RECAPTCHA_API_URL:
+                raise ValueError()
             return self.json_data
     
-    if args[0] == SOME_VALID_RECAPTCHA_API_URL:
-        if kwargs['data']['response'] == SOME_VALID_RECAPTCHA_TOKEN:
+    if url == SOME_VALID_RECAPTCHA_API_URL:
+        if data['response'] == SOME_VALID_RECAPTCHA_TOKEN:
             return MockResponse(SUCCESSFUL_RECAPTCHA_RESPONSE, 200)
-        if kwargs['data']['response'] == SOME_UNVALID_RECAPTCHA_TOKEN:
+        if data['response'] == SOME_UNVALID_RECAPTCHA_TOKEN:
             return MockResponse(UNSUCCESSFUL_RECAPTCHA_RESPONSE, 200)
-        if kwargs['data']['response'] == SOME_EXPIRED_RECAPTCHA_TOKEN:
+        if data['response'] == SOME_EXPIRED_RECAPTCHA_TOKEN:
             return MockResponse(EXPIRED_RECAPTCHA_RESPONSE, 200)
-
-    # Unvalid url! timeout request.
-    raise Timeout('Timeout error details')
+        if data['response'] == SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN:
+            return MockResponse(UNVALID_HOSTNAME_RECAPTCHA_RESPONSE, 200)
+    elif url == SOME_TIMING_OUT_RECAPTCHA_API_URL:
+        raise Timeout('Timeout error details')
+    
+    return MockResponse(None, 404)

@@ -13,7 +13,8 @@ from .mocks.requests import (
     SOME_UNVALID_HOSTNAME,
     SOME_VALID_RECAPTCHA_TOKEN,
     SOME_UNVALID_RECAPTCHA_TOKEN,
-    SOME_EXPIRED_RECAPTCHA_TOKEN
+    SOME_EXPIRED_RECAPTCHA_TOKEN,
+    SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN
 )
 
 
@@ -115,6 +116,11 @@ def test_post_barcode(mocker, monkeypatch, client, abracadabra_png):
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'image/png'
     assert response.content == abracadabra_png
+
+    # Valid params, valid recaptcha but unvalid hostname
+    response = client.simulate_post_png('/', params={'text': 'abracadabra', 'recaptcha': SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN})
+    assert response.status_code == 400
+    assert response.json == BAD_REQUEST_INVALID_RECAPTCHA
 
     # Valid params, valid recaptcha, timeout
     with monkeypatch.context() as mp:
