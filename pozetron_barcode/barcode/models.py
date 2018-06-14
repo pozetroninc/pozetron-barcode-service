@@ -16,11 +16,22 @@ from pozetron_barcode.settings import (
     RECAPTCHA_MAX_RETRY_TIME
 )
 
+class RecaptchaRequiredException(Exception):
+    pass
+
 class RecaptchaRequestException(Exception):
     pass
 
+class RecaptchaJSONException(Exception):
+    pass
 
-def backoff_handler(details):
+class RecaptchaVerificationException(Exception):
+    pass
+
+class RecaptchaExpiryException(Exception):
+    pass
+
+def recaptcha_backoff_handler(details):
     raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
 
 
@@ -31,11 +42,26 @@ class BarcodeResource:
         backoff.expo,
         RecaptchaRequestException,
         max_time=RECAPTCHA_MAX_RETRY_TIME,
-        on_backoff=backoff_handler
+        on_backoff=recaptcha_backoff_handler
     )
     def on_post(req, resp):
         if not req.content_type or req.content_type.split(';')[0] != 'application/x-www-form-urlencoded':
             raise falcon.HTTPUnsupportedMediaType(description='Use application/x-www-form-urlencoded')
+
+        # Verify recaptcha
+        try:
+            BarcodeResource._verify_recaptcha(req, resp)
+        except RecaptchaRequiredException:
+            raise falcon.HTTPBadRequest(description='reCAPTCHA token required')
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
+            raise RecaptchaRequestException()
+        except RecaptchaJSONException:
+            raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
+        except RecaptchaVerificationException:
+            raise falcon.HTTPBadRequest(description='Invalid reCAPTCHA')
+        except RecaptchaVerificationException:
+            raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
+        
         # Get data (bytes) from request
         try:
             if 'base64' in req.params:
@@ -50,31 +76,28 @@ class BarcodeResource:
         except KeyError:
             raise falcon.HTTPBadRequest(description='Invalid parameters. Required: "text" or "base64"')
         
-        # Verify recaptcha
-        if 'recaptcha' in req.params:
-            try:
-                r = requests.post(RECAPTCHA_API_URL, data = {
-                    'secret': RECAPTCHA_SECRET,
-                    'response': req.params['recaptcha']
-                })
-            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
-                raise RecaptchaRequestException()
-            try:
-                result = r.json()
-            except ValueError:
-                raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
-            if not result.get('success'):
-                raise falcon.HTTPBadRequest(description='Invalid recaptcha')
-            if result.get('hostname') not in RECAPTCHA_ALLOWED_HOSTNAMES:
-                raise falcon.HTTPBadRequest(description='Invalid recaptcha')
-            challenge_time = dateutil.parser.parse(result.get('challenge_ts'))
-            now = datetime.now(timezone.utc)
-            if (now - challenge_time).total_seconds() > RECAPTCHA_EXPIRES_IN:
-                raise falcon.HTTPBadRequest(description='Recaptcha token expired')
-        else:
-            raise falcon.HTTPBadRequest(description='Recaptcha token required')
-        
         return BarcodeResource._generate_barcode(req, resp, data)
+
+    @staticmethod
+    def _verify_recaptcha(req, resp):
+        if 'recaptcha' not in req.params:
+            raise RecaptchaRequiredException()
+        r = requests.post(RECAPTCHA_API_URL, data = {
+            'secret': RECAPTCHA_SECRET,
+            'response': req.params['recaptcha']
+        })
+        try:
+            result = r.json()
+        except ValueError:
+            raise RecaptchaJSONException()
+        if not result.get('success'):
+            raise RecaptchaVerificationException()
+        if result.get('hostname') not in RECAPTCHA_ALLOWED_HOSTNAMES:
+            raise RecaptchaVerificationException()
+        challenge_time = dateutil.parser.parse(result.get('challenge_ts'))
+        now = datetime.now(timezone.utc)
+        if (now - challenge_time).total_seconds() > RECAPTCHA_EXPIRES_IN:
+            raise RecaptchaExpiryException()
 
     @staticmethod
     def _generate_barcode(req, resp, data):
