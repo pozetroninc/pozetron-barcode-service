@@ -81,7 +81,6 @@ class BarcodeResource:
             raise falcon.HTTPBadRequest(description='Invalid reCAPTCHA')
         except RecaptchaExpiryException:
             raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
-        
 
         return BarcodeResource._generate_barcode(req, resp, data)
 
