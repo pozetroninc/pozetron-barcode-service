@@ -54,6 +54,20 @@ class BarcodeResource:
         if not req.content_type or req.content_type.split(';')[0] != 'application/x-www-form-urlencoded':
             raise falcon.HTTPUnsupportedMediaType(description='Use application/x-www-form-urlencoded')
 
+        # Get data (bytes) from request
+        try:
+            if 'base64' in req.params:
+                try:
+                    data = b64decode(req.params['base64'])
+                except ValueError:
+                    raise falcon.HTTPBadRequest(description='Invalid base64')
+            elif 'text' in req.params:
+                data = req.params['text'].encode('ascii')
+            else:
+                raise KeyError
+        except KeyError:
+            raise falcon.HTTPBadRequest(description='Invalid parameters. Required: "text" or "base64"')
+
         # Verify recaptcha
         try:
             BarcodeResource._verify_recaptcha(req, resp)
@@ -68,20 +82,7 @@ class BarcodeResource:
         except RecaptchaExpiryException:
             raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
         
-        # Get data (bytes) from request
-        try:
-            if 'base64' in req.params:
-                try:
-                    data = b64decode(req.params['base64'])
-                except ValueError:
-                    raise falcon.HTTPBadRequest(description='Invalid base64')
-            elif 'text' in req.params:
-                data = req.params['text'].encode('ascii')
-            else:
-                raise KeyError
-        except KeyError:
-            raise falcon.HTTPBadRequest(description='Invalid parameters. Required: "text" or "base64"')
-        
+
         return BarcodeResource._generate_barcode(req, resp, data)
 
     @staticmethod
