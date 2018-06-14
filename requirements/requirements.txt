@@ -1,4 +1,5 @@
 wheel
+backoff==1.5.0
 falcon==1.3.0
 falcon-cors==1.1.7
 bjoern==2.0.1
