@@ -7,6 +7,11 @@ import falcon
 import pyqrcode as qrcode
 import requests
 
+from pozetron_barcode.settings import (
+    RECAPTCHA_SECRET,
+    RECAPTCHA_ALLOWED_HOSTNAMES
+)
+
 
 class BarcodeResource:
 
@@ -31,7 +36,7 @@ class BarcodeResource:
         # Verify recaptcha
         if 'recaptcha' in req.params:
             r = requests.post('https://www.google.com/recaptcha/api/siteverify', data = {
-                'secret':'6Lfw2F4UAAAAAN79AC2lM7Ct7686UjtwKf84DLtW',
+                'secret': RECAPTCHA_SECRET,
                 'response': req.params['recaptcha']
             })
             try:
@@ -40,7 +45,7 @@ class BarcodeResource:
                 raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
             if not result.get('success'):
                 raise falcon.HTTPBadRequest(description='Invalid recaptcha')
-            if result.get('hostname') not in ['qrbarco.de', 'www.qrbarco.de', 'localhost']:
+            if result.get('hostname') not in RECAPTCHA_ALLOWED_HOSTNAMES:
                 raise falcon.HTTPBadRequest(description='Invalid recaptcha')
             challenge_time = dateutil.parser.parse(result.get('challenge_ts'))
             now = datetime.now(timezone.utc)

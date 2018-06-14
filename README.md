@@ -4,6 +4,12 @@ This is the microservice used to generate barcodes (mostly QR codes)
 
 ## Quickstart
 
+Configure service
+
+    cp .env.example .env
+
+    nano .env
+
 Start Docker
 
     docker-compose up

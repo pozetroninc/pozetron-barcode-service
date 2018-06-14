@@ -8,5 +8,5 @@ services:
       - "9001:9001"
     volumes:
       - .:/usr/src/app
-    environment:
-      - FALCON_SETTINGS_MODULE=pozetron_barcode.settings.docker
+    env_file:
+      - .env
