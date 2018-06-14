@@ -65,7 +65,7 @@ class BarcodeResource:
             raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
         except RecaptchaVerificationException:
             raise falcon.HTTPBadRequest(description='Invalid reCAPTCHA')
-        except RecaptchaVerificationException:
+        except RecaptchaExpiryException:
             raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
         
         # Get data (bytes) from request
