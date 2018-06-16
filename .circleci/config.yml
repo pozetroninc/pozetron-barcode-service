@@ -6,13 +6,16 @@ jobs:
             - image: themattrix/tox:latest
         steps:
             - checkout
+            - run:
+                name: Install Bjoern build requirements
+                command: sudo apt install python3-dev libev-dev
             - restore_cache:
-                key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+                key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
             - run:
                 name: Install Python deps in a venv
                 command: tox
             - save_cache:
-                key: deps1-{{ .Branch }}-{{ checksum "requirements.txt" }}
+                key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
                 paths:
                     - ".tox"
 notify:
