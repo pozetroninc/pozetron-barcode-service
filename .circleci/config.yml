@@ -10,7 +10,7 @@ jobs:
                 name: Install Bjoern build requirements
                 command: apt update && \
                          apt install -y --no-install-recommends \
-                             python3-dev libev-dev \
+                             python3-dev libev-dev && \
                          apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
             - restore_cache:
                 key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
