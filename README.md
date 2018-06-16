@@ -21,11 +21,6 @@ Using tox:
 
     tox
 
-Or running pytest only:
-
-    pip install -r requirements/test-requirements.txt
-    pytest tests --cov=pozetron_barcode
-
 ## License
     Copyright 2018 Pozetron Inc.
 
