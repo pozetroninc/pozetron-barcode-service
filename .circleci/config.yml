@@ -8,7 +8,7 @@ jobs:
             - checkout
             - run:
                 name: Install Bjoern build requirements
-                command: sudo apt install python3-dev libev-dev
+                command: apt install python3-dev libev-dev
             - restore_cache:
                 key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
             - run:
