@@ -10,7 +10,7 @@ import os
 # Local imports
 
 
-DEBUG = bool(json.loads(os.environ['DEBUG']))
+DEBUG = bool(json.loads(os.environ['DEBUG'])) if hasattr(os.environ, 'DEBUG') else False
 
 REDIS_HOST = os.environ.get('REDIS_HOST', 'redis')
 REDIS_PORT = os.environ.get('REDIS_PORT', 6379)
