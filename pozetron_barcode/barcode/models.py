@@ -22,20 +22,26 @@ from pozetron_barcode.settings import (
     REDIS_DB,
 )
 
+
 class RecaptchaRequiredException(Exception):
     pass
+
 
 class RecaptchaRequestException(Exception):
     pass
 
+
 class RecaptchaJSONException(Exception):
     pass
+
 
 class RecaptchaVerificationException(Exception):
     pass
 
+
 class RecaptchaExpiryException(Exception):
     pass
+
 
 def recaptcha_backoff_handler(details):
     raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
@@ -46,7 +52,7 @@ class BarcodeResource:
     def __init__(self):
         if RECAPTCHA_SHOULD_LOG_RETRIES:
             logging.getLogger('backoff').addHandler(logging.StreamHandler())
-    
+
     @staticmethod
     @backoff.on_exception(
         backoff.expo,
@@ -94,7 +100,7 @@ class BarcodeResource:
     def _verify_recaptcha(req, resp):
         if 'recaptcha' not in req.params:
             raise RecaptchaRequiredException()
-        r = requests.post(RECAPTCHA_API_URL, data = {
+        r = requests.post(RECAPTCHA_API_URL, data={
             'secret': RECAPTCHA_SECRET,
             'response': req.params['recaptcha']
         })
@@ -120,7 +126,7 @@ class BarcodeResource:
         r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
         r.set(urn, 0, nx=True)
         r.incr(urn, amount=1)
-    
+
     @staticmethod
     def _generate_barcode(req, resp, data):
         # Disable file_wrapper to make BytesIO work
