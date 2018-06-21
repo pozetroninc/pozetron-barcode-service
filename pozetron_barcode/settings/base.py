@@ -10,6 +10,8 @@ import os
 # Local imports
 
 
+DEBUG = bool(json.loads(os.environ['DEBUG']))
+
 RECAPTCHA_API_URL = "https://www.google.com/recaptcha/api/siteverify"
 RECAPTCHA_SECRET = os.environ['RECAPTCHA_SECRET']
 RECAPTCHA_ALLOWED_HOSTNAMES = json.loads(os.environ['RECAPTCHA_ALLOWED_HOSTNAMES_JSON'])
