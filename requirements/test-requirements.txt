@@ -1,3 +1,4 @@
+mockredispy==2.9.3
 pyflakes
 pytest==3.6.1
 pytest-cov==2.5.1

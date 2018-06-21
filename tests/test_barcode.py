@@ -2,6 +2,7 @@ from base64 import b64encode
 import json
 
 import pytest
+from mockredis import mock_strict_redis_client
 
 
 from .mocks.requests import (
@@ -78,8 +79,9 @@ def test_post_barcode(mocker, monkeypatch, client, abracadabra_png):
     monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_EXPIRES_IN', 60)
     monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_MAX_RETRY_TIME', 2) # in order for 'backoff' fails quickly
     
-    # Then, mock requests.post, then continue with tests
-    m = mocker.patch('pozetron_barcode.barcode.models.requests.post', side_effect=mocked_requests_post)
+    # Then, mock [requests.post, redis.StrictRedis] and continue with tests
+    m1 = mocker.patch('pozetron_barcode.barcode.models.requests.post', side_effect=mocked_requests_post)
+    m2 = mocker.patch('pozetron_barcode.barcode.models.redis.StrictRedis', side_effect=mock_strict_redis_client)
     
     # No params, no recaptcha
     response = client.simulate_post_png('/')
@@ -113,6 +115,12 @@ def test_post_barcode(mocker, monkeypatch, client, abracadabra_png):
 
     # Valid params, valid recaptcha, get barcode from text
     response = client.simulate_post_png('/', params={'text': 'abracadabra', 'recaptcha': SOME_VALID_RECAPTCHA_TOKEN})
+    assert response.status_code == 200
+    assert response.headers['Content-Type'] == 'image/png'
+    assert response.content == abracadabra_png
+
+    # Valid params, valid recaptcha, with color scheme
+    response = client.simulate_post_png('/', params={'text': 'abracadabra', 'recaptcha': SOME_VALID_RECAPTCHA_TOKEN, 'color_scheme': 'any'})
     assert response.status_code == 200
     assert response.headers['Content-Type'] == 'image/png'
     assert response.content == abracadabra_png

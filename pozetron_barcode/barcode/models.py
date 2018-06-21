@@ -7,6 +7,7 @@ import backoff
 import dateutil.parser
 import falcon
 import pyqrcode as qrcode
+import redis
 import requests
 
 from pozetron_barcode.settings import (
@@ -15,7 +16,10 @@ from pozetron_barcode.settings import (
     RECAPTCHA_ALLOWED_HOSTNAMES,
     RECAPTCHA_EXPIRES_IN,
     RECAPTCHA_MAX_RETRY_TIME,
-    RECAPTCHA_SHOULD_LOG_RETRIES
+    RECAPTCHA_SHOULD_LOG_RETRIES,
+    REDIS_HOST,
+    REDIS_PORT,
+    REDIS_DB,
 )
 
 class RecaptchaRequiredException(Exception):
@@ -82,7 +86,9 @@ class BarcodeResource:
         except RecaptchaExpiryException:
             raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
 
-        return BarcodeResource._generate_barcode(req, resp, data)
+        BarcodeResource._log_color_scheme(req, resp)
+
+        BarcodeResource._generate_barcode(req, resp, data)
 
     @staticmethod
     def _verify_recaptcha(req, resp):
@@ -105,6 +111,16 @@ class BarcodeResource:
         if (now - challenge_time).total_seconds() > RECAPTCHA_EXPIRES_IN:
             raise RecaptchaExpiryException()
 
+    @staticmethod
+    def _log_color_scheme(req, resp):
+        if 'color_scheme' in req.params:
+            urn = 'urn:qrbarcode:colorscheme:' + req.params['color_scheme']
+        else:
+            urn = 'urn:qrbarcode:colorscheme:none'
+        r = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+        r.set(urn, 0, nx=True)
+        r.incr(urn, amount=1)
+    
     @staticmethod
     def _generate_barcode(req, resp, data):
         # Disable file_wrapper to make BytesIO work

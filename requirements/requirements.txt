@@ -7,4 +7,5 @@ bjoern==2.0.1
 pypng==0.0.18
 python-dateutil==2.7.3
 PyQRCode==1.2.1
+redis==2.10.6
 requests==2.19.0

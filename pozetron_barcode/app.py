@@ -13,7 +13,7 @@ from falcon_cors import CORS
 # Local imports
 try:
     from settings import DEBUG
-    from barcode.models import BarcodeResource
+    from barcode.models import BarcodeResource  # pragma: nocover
     from healthcheck.healthz import HealthCheck  # pragma: nocover
 except ImportError:
     from pozetron_barcode.settings import DEBUG
