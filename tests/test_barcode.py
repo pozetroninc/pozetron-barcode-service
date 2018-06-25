@@ -7,9 +7,12 @@ from mockredis import mock_strict_redis_client
 
 from .mocks.requests import (
     mocked_requests_post,
+    SOME_VALID_RECAPTCHA_SECRET,
+    SOME_UNVALID_RECAPTCHA_SECRET,
     SOME_VALID_RECAPTCHA_API_URL,
     SOME_TIMING_OUT_RECAPTCHA_API_URL,
     SOME_UNVALID_JSON_RECAPTCHA_API_URL,
+    SOME_EXAMPLE_EXPIRY_TIME,
     SOME_EXAMPLE_ALLOWED_HOSTNAMES,
     SOME_UNVALID_HOSTNAME,
     SOME_VALID_RECAPTCHA_TOKEN,
@@ -71,12 +74,10 @@ def test_post_barcode_invalid(client):
 def test_post_barcode(mocker, monkeypatch, client, abracadabra_png):
     
     # First, ensure predictable recaptcha configs
-    monkeypatch.setattr('tests.mocks.requests.RECAPTCHA_ALLOWED_HOSTNAMES', SOME_EXAMPLE_ALLOWED_HOSTNAMES)
-    monkeypatch.setattr('tests.mocks.requests.RECAPTCHA_EXPIRES_IN', 60)
-
+    monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_SECRET', SOME_VALID_RECAPTCHA_SECRET)
     monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_API_URL', SOME_VALID_RECAPTCHA_API_URL)
     monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_ALLOWED_HOSTNAMES', SOME_EXAMPLE_ALLOWED_HOSTNAMES)
-    monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_EXPIRES_IN', 60)
+    monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_EXPIRES_IN', SOME_EXAMPLE_EXPIRY_TIME)
     monkeypatch.setattr('pozetron_barcode.barcode.models.RECAPTCHA_MAX_RETRY_TIME', 2) # in order for 'backoff' fails quickly
     
     # Then, mock [requests.post, redis.StrictRedis] and continue with tests
@@ -129,6 +130,21 @@ def test_post_barcode(mocker, monkeypatch, client, abracadabra_png):
     response = client.simulate_post_png('/', params={'text': 'abracadabra', 'recaptcha': SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN})
     assert response.status_code == 400
     assert response.json == BAD_REQUEST_INVALID_RECAPTCHA
+
+    # Valid params, valid recaptcha but unvalid recaptcha secret
+    with monkeypatch.context() as mp:
+        mp.setattr('pozetron_barcode.barcode.models.RECAPTCHA_SECRET', SOME_UNVALID_RECAPTCHA_SECRET)
+        response = client.simulate_post_png('/', params={'text': 'abracadabra', 'recaptcha': SOME_VALID_RECAPTCHA_TOKEN})
+        assert response.status_code == 400
+        assert response.json == BAD_REQUEST_INVALID_RECAPTCHA
+    
+    # Valid params, recaptcha disabled
+    with monkeypatch.context() as mp:
+        mp.setattr('pozetron_barcode.barcode.models.RECAPTCHA_SECRET', None)
+        response = client.simulate_post_png('/', params={'text': 'abracadabra'})
+        assert response.status_code == 200
+        assert response.headers['Content-Type'] == 'image/png'
+        assert response.content == abracadabra_png
 
     # Valid params, valid recaptcha, timeout
     with monkeypatch.context() as mp:

@@ -79,18 +79,19 @@ class BarcodeResource:
             raise falcon.HTTPBadRequest(description='Invalid parameters. Required: "text" or "base64"')
 
         # Verify recaptcha
-        try:
-            BarcodeResource._verify_recaptcha(req, resp)
-        except RecaptchaRequiredException:
-            raise falcon.HTTPBadRequest(description='reCAPTCHA token required')
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
-            raise RecaptchaRequestException(e.args[0])
-        except RecaptchaJSONException:
-            raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
-        except RecaptchaVerificationException:
-            raise falcon.HTTPBadRequest(description='Invalid reCAPTCHA')
-        except RecaptchaExpiryException:
-            raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
+        if RECAPTCHA_SECRET:
+            try:
+                BarcodeResource._verify_recaptcha(req, resp)
+            except RecaptchaRequiredException:
+                raise falcon.HTTPBadRequest(description='reCAPTCHA token required')
+            except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+                raise RecaptchaRequestException(e.args[0])
+            except RecaptchaJSONException:
+                raise falcon.HTTPBadRequest(description='Could not verify you are not a robot')
+            except RecaptchaVerificationException:
+                raise falcon.HTTPBadRequest(description='Invalid reCAPTCHA')
+            except RecaptchaExpiryException:
+                raise falcon.HTTPBadRequest(description='reCAPTCHA token expired')
 
         BarcodeResource._log_color_scheme(req, resp)
 

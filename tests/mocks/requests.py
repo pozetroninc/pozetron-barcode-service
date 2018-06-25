@@ -2,15 +2,14 @@ import datetime
 
 from requests.exceptions import Timeout
 
-from pozetron_barcode.settings import (
-    RECAPTCHA_ALLOWED_HOSTNAMES,
-    RECAPTCHA_EXPIRES_IN
-)
-
 # Example data
+SOME_VALID_RECAPTCHA_SECRET = 'validrecaptchasecret'
+SOME_UNVALID_RECAPTCHA_SECRET = 'unvalidrecaptchasecret'
 SOME_VALID_RECAPTCHA_API_URL = 'https://www.google.com/validapi'
 SOME_TIMING_OUT_RECAPTCHA_API_URL = 'https://www.google.com/timeout'
 SOME_UNVALID_JSON_RECAPTCHA_API_URL = 'https://www.google.com/unvalidjson'
+
+SOME_EXAMPLE_EXPIRY_TIME = 60
 
 SOME_EXAMPLE_ALLOWED_HOSTNAMES = ['qrbarco.de', 'www.qrbarco.de']
 SOME_UNVALID_HOSTNAME = 'www.unval.id'
@@ -23,7 +22,7 @@ SOME_UNVALID_HOSTNAME_RECAPTCHA_TOKEN = 'unvalidhostnametoken'
 # Example recaptcha verification responses
 SUCCESSFUL_RECAPTCHA_RESPONSE = {
     'success': True,
-    'hostname': RECAPTCHA_ALLOWED_HOSTNAMES[0],
+    'hostname': SOME_EXAMPLE_ALLOWED_HOSTNAMES[0],
     'challenge_ts': datetime.datetime.now(datetime.timezone.utc).isoformat()
 }
 
@@ -33,14 +32,18 @@ UNSUCCESSFUL_RECAPTCHA_RESPONSE = {
 
 EXPIRED_RECAPTCHA_RESPONSE = {
     'success': True,
-    'hostname': RECAPTCHA_ALLOWED_HOSTNAMES[0],
-    'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=RECAPTCHA_EXPIRES_IN+10)).isoformat()
+    'hostname': SOME_EXAMPLE_ALLOWED_HOSTNAMES[0],
+    'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=SOME_EXAMPLE_EXPIRY_TIME+10)).isoformat()
 }
 
 UNVALID_HOSTNAME_RECAPTCHA_RESPONSE = {
     'success': True,
     'hostname': SOME_UNVALID_HOSTNAME,
-    'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=RECAPTCHA_EXPIRES_IN+10)).isoformat()
+    'challenge_ts': (datetime.datetime.now(datetime.timezone.utc)-datetime.timedelta(seconds=SOME_EXAMPLE_EXPIRY_TIME+10)).isoformat()
+}
+
+UNVALID_RECAPTCHA_SECRET_RESPONSE = {
+    'success': False,
 }
 
 
@@ -60,6 +63,9 @@ def mocked_requests_post(*args, **kwargs):
                 raise ValueError()
             return self.json_data
     
+    if data['secret'] != SOME_VALID_RECAPTCHA_SECRET:
+        return MockResponse(UNVALID_RECAPTCHA_SECRET_RESPONSE, 400)
+
     if url == SOME_VALID_RECAPTCHA_API_URL:
         if data['response'] == SOME_VALID_RECAPTCHA_TOKEN:
             return MockResponse(SUCCESSFUL_RECAPTCHA_RESPONSE, 200)
