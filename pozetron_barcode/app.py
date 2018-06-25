@@ -12,16 +12,20 @@ from falcon_cors import CORS
 
 # Local imports
 try:
-    from settings import DEBUG
+    from settings import DEBUG, FALCON_CORS_ALLOW_ORIGINS_LIST
     from barcode.models import BarcodeResource  # pragma: nocover
     from healthcheck.healthz import HealthCheck  # pragma: nocover
 except ImportError:
-    from pozetron_barcode.settings import DEBUG
+    from pozetron_barcode.settings import DEBUG, FALCON_CORS_ALLOW_ORIGINS_LIST
     from pozetron_barcode.barcode.models import BarcodeResource
     from pozetron_barcode.healthcheck.healthz import HealthCheck
 
 
-cors = CORS(allow_origins_regex='http://localhost:')
+cors = CORS(
+    allow_origins_list=FALCON_CORS_ALLOW_ORIGINS_LIST,
+    allow_all_headers=True,
+    allow_all_methods=True
+)
 
 
 # Create resources
