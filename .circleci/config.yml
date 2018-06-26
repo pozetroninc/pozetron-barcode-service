@@ -1,0 +1,23 @@
+version: 2
+jobs:
+    build:
+        working_directory: ~/circulate
+        docker:
+            - image: themattrix/tox:latest
+        steps:
+            - checkout
+            - run:
+                name: Install Bjoern build requirements
+                command: apt update && apt install -y --no-install-recommends python3-dev libev-dev && apt clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+            - restore_cache:
+                key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
+            - run:
+                name: Install Python deps in a venv
+                command: tox
+            - save_cache:
+                key: deps1-{{ .Branch }}-{{ checksum "requirements/requirements.txt" }}
+                paths:
+                    - ".tox"
+notify:
+    webhooks:
+        - url: https://twistapp.com/integrations/circleci/from_circleci?install_id=26700&post_data_url=https%3A%2F%2Ftwistapp.com%2Fapi%2Fv2%2Fintegration_incoming%2Fpost_data%3Finstall_id%3D26700%26install_token%3D26700_8f8e31d511459fc86099dfce0a07a8d4
