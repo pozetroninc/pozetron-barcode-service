@@ -1,5 +1,14 @@
 version: '3'
 services:
+  redis:
+    image: redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data:/redis-data
+    restart: always
   api:
     build:
       dockerfile: docker/FalconDockerfile
@@ -8,5 +17,7 @@ services:
       - "9001:9001"
     volumes:
       - .:/usr/src/app
-    environment:
-      - FALCON_SETTINGS_MODULE=pozetron_barcode.settings.docker
+    links:
+      - redis
+    env_file:
+      - .env

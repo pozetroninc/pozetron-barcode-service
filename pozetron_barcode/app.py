@@ -4,6 +4,7 @@ App runner
 """
 # System imports
 from __future__ import absolute_import
+import logging
 # Third-party imports
 import falcon
 from falcon_cors import CORS
@@ -11,14 +12,20 @@ from falcon_cors import CORS
 
 # Local imports
 try:
-    from barcode.models import BarcodeResource
+    from settings import DEBUG, FALCON_CORS_ALLOW_ORIGINS_LIST
+    from barcode.models import BarcodeResource  # pragma: nocover
     from healthcheck.healthz import HealthCheck  # pragma: nocover
 except ImportError:
+    from pozetron_barcode.settings import DEBUG, FALCON_CORS_ALLOW_ORIGINS_LIST
     from pozetron_barcode.barcode.models import BarcodeResource
     from pozetron_barcode.healthcheck.healthz import HealthCheck
 
 
-cors = CORS(allow_origins_regex='http://localhost:')
+cors = CORS(
+    allow_origins_list=FALCON_CORS_ALLOW_ORIGINS_LIST,
+    allow_all_headers=True,
+    allow_all_methods=True
+)
 
 
 # Create resources
@@ -31,6 +38,19 @@ app = falcon.API(middleware=[cors.middleware])
 app.req_options.auto_parse_form_urlencoded = True
 app.add_route('/healthz/', health_check)
 app.add_route('/', barcode)
+
+
+if DEBUG:
+    # Setup logging
+    logger = logging.getLogger(__name__)
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.INFO)
+
+    def error_handler(ex, req, resp, params):
+        logger.exception(ex)
+        raise ex
+
+    app.add_error_handler(Exception, error_handler)
 
 
 # Useful for debugging problems in API, it works with pdb
