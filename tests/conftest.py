@@ -1,7 +1,6 @@
 from falcon.testing import TestClient
 import pytest
-
-from pozetron_barcode.app import app
+import os
 
 
 class CustomTestClient(TestClient):
@@ -32,5 +31,7 @@ class CustomTestClient(TestClient):
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    monkeypatch.setitem(os.environ, 'DEBUG', 'true')
+    from pozetron_barcode.app import app
     return CustomTestClient(app)
