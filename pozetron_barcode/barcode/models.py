@@ -132,7 +132,7 @@ class BarcodeResource:
     def _generate_barcode(req, resp, data):
         # Disable file_wrapper to make BytesIO work
         # See https://github.com/unbit/uwsgi/issues/1126#issuecomment-166687767
-        del req.env['wsgi.file_wrapper']
+        #del req.env['wsgi.file_wrapper']
 
         resp.status = falcon.HTTP_200
         resp.content_type = falcon.MEDIA_PNG

@@ -9,3 +9,4 @@ python-dateutil==2.7.3
 PyQRCode==1.2.1
 redis==2.10.6
 requests==2.19.0
+python-dotenv==0.8.2

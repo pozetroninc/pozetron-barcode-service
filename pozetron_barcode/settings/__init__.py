@@ -8,6 +8,9 @@ from __future__ import absolute_import
 import os
 import importlib
 
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
 my_module = importlib.import_module(os.getenv('FALCON_SETTINGS_MODULE'))
 
 my_module_dict = my_module.__dict__

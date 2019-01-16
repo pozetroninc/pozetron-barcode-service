@@ -9,3 +9,6 @@ Production settings file
 # Local imports
 from __future__ import absolute_import
 from .base import *  # noqa
+
+
+FALCON_CORS_ALLOW_ORIGINS_LIST='["https://qrbarco.de", "https://www.qrbarco.de"]'
